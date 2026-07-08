@@ -86,10 +86,23 @@ not space-, separated because a context name can itself contain spaces, e.g.
 the reusable-workflow context above) sets the platform settings that can't live
 in files: repo-level auto-merge (required for `renovate.json`'s
 `platformAutomerge`), delete-branch-on-merge, and a ruleset on the target branch
-requiring the given status checks and 1 approving review (`APPROVALS_REQUIRED`
-to override), with the Renovate GitHub App (looked up via `gh api apps/renovate`)
-and the repo Admin role (built-in `RepositoryRole` actor_id 5) exempted as
-`bypass_mode: always` bypass actors on both rules. It deletes every ruleset
-already on the repo before creating this one, so re-runs replace rather than
-accumulate — it uses `gh api` and is otherwise idempotent (safe to re-run after
-renaming the repo or reinstalling Renovate).
+requiring the given status checks and some number of approving reviews
+(`APPROVALS_REQUIRED` to override; default 1 on org-owned repos, 0 on user-owned
+repos — see next paragraph), with the Renovate GitHub App (looked up via `gh api
+apps/renovate`) and the repo Admin role (built-in `RepositoryRole` actor_id 5)
+exempted as `bypass_mode: always` bypass actors on both rules. It deletes every
+ruleset already on the repo before creating this one, so re-runs replace rather
+than accumulate — it uses `gh api` and is otherwise idempotent (safe to re-run
+after renaming the repo or reinstalling Renovate).
+
+GitHub only honours ruleset `bypass_actors` (the Renovate app entry) on repos
+owned by an **organisation**. On a personal (User-owned) repo that entry is
+accepted by the API but silently has no effect, so a required-review rule would
+block Renovate's own PRs forever (Renovate can't review its own PR and nothing
+else is exempted). The script therefore looks up the owner type (`gh api
+users/<owner>`) and defaults `APPROVALS_REQUIRED` to 0 on user-owned repos and 1
+on orgs. Status checks are still required and direct pushes to the branch are
+still blocked on both; only the "someone else must approve" step is dropped for
+personal repos. Override with `APPROVALS_REQUIRED=<n>` if you add collaborators
+and want human review enforced (Renovate's PRs will then need a separate
+auto-approve app, e.g. Mend's renovate-approve, to merge).
