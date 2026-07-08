@@ -65,11 +65,16 @@ Workflows are prefixed `ci-` (pull-request checks) or `cd-` (post-merge delivery
 
 ## Renovate
 
-`renovate.json` extends `config:recommended` on a weekly schedule with
-auto-approve + automerge (`platformAutomerge`, which needs repo-level
-auto-merge — see `make protect-branch`). The `pre-commit` manager keeps the
-frozen hook revisions in `.pre-commit-config.yaml` up to date. Add
-language/ecosystem managers here as a derived repo grows.
+`renovate.json` extends the shared preset
+`github>jay-withers/template-renovate` (see that repo for the policy: batched
+Monday schedule, automerge of non-major dev deps/pins/digests via
+`platformAutomerge` — which needs repo-level auto-merge, see
+`make protect-branch` — dependency dashboard, semantic commits, and the
+`pre-commit` manager that keeps frozen hook revisions in
+`.pre-commit-config.yaml` up to date), plus a local `autoApprove: true` so
+those low-risk updates can clear the branch-protection review requirement.
+Docker/GitHub Actions/Terraform/npm groupings are included in the shared
+preset and activate automatically if a derived repo adds those ecosystems.
 
 ## GitHub repo settings
 
