@@ -2,9 +2,9 @@
 
 A language-agnostic GitHub repository template. It gives a new repo a working
 baseline on day one — a dev container, generic pre-commit hooks, PR/merge CI
-workflows, Renovate dependency updates, Conventional Commits enforcement, and
-branch-protection scaffolding — with no application code, so you add your own
-source and layer project-specific tooling on top.
+workflows, Renovate dependency updates, and Conventional Commits enforcement —
+with no application code, so you add your own source and layer
+project-specific tooling on top.
 
 ## Getting started
 
@@ -19,20 +19,12 @@ source and layer project-specific tooling on top.
    make install
    ```
 
-4. Configure the GitHub-side settings that can't be templated as files (see
-   [Configuring GitHub](#configuring-github-for-a-repo-created-from-this-template)):
-
-   ```bash
-   make protect-branch
-   ```
-
 ## Commands
 
 Run `make` (or `make help`) to list the available targets:
 
 ```bash
 make install           # install pre-commit hooks (run once after cloning)
-make protect-branch    # configure GitHub repo settings (auto-merge, branch protection) — override CHECKS if your repo's checks differ
 make lint              # run all pre-commit hooks against every file
 ```
 
@@ -86,47 +78,21 @@ checks in branch protection (below).
 
 `renovate.json` extends `config:recommended` on a weekly schedule with
 auto-approve and automerge. `platformAutomerge` needs repo-level auto-merge to
-be enabled — `make protect-branch` does that. The `pre-commit` manager updates
-the frozen hook revisions in `.pre-commit-config.yaml`; add language/ecosystem
-managers as your repo grows.
+be enabled — see [Configuring GitHub](#configuring-github-for-a-repo-created-from-this-template).
+The `pre-commit` manager updates the frozen hook revisions in
+`.pre-commit-config.yaml`; add language/ecosystem managers as your repo grows.
 
 ## Configuring GitHub for a repo created from this template
 
-Some settings can't be templated as files and need to be set once per repo via
-the GitHub API. Run, with the [`gh` CLI](https://cli.github.com) authenticated
-as an account with admin rights on the new repo:
-
-```bash
-make protect-branch
-```
-
-This runs `scripts/protect-branch.sh` and is idempotent (safe to re-run). It:
-
-- Enables repository **auto-merge**, which `renovate.json`'s `platformAutomerge`
-  depends on — without it, Renovate's PRs sit fully green forever with nothing
-  to merge them.
-- Enables **delete branch on merge**, so merged Renovate branches don't pile up.
-- Deletes every ruleset currently on the repo, then creates a fresh one on the
-  target branch (default `main`, override with `BRANCH=<name>`) requiring the
-  given status checks and 1 approving review (override with
-  `APPROVALS_REQUIRED`), with the Renovate GitHub App and the repo **Admin**
-  role exempted as bypass actors on both. Because it clears existing rulesets
-  first, re-runs replace rather than accumulate — don't run it against a repo
-  that has unrelated rulesets you want to keep.
-
-`CHECKS` defaults to this template's single required status-check context,
-`pre-commit / Pre-commit`. It's a **newline-separated** list (not space, since a
-context name can itself contain spaces, like the reusable-workflow context
-above) — override it as you add CI workflows:
-
-```bash
-make protect-branch CHECKS="$(printf 'pre-commit / Pre-commit\nbuild\ntest')"
-```
-
-The `pre-commit` job calls a reusable workflow, so its context is
-`<caller job id> / <reusable job name>` = `pre-commit / Pre-commit`, **not** the
-bare `pre-commit` — requiring the bare name leaves the check "Expected" forever.
-Confirm the exact context names for your repo's workflows with `gh pr checks`.
+Settings that can't be templated as files — repo-level auto-merge, delete
+branch on merge, and a branch-protection ruleset requiring status checks and
+approving reviews — aren't bootstrapped by anything in this template anymore.
+A repo just created from this template gets GitHub's defaults until it's
+added to `var.repos` in
+[jay-withers/github-repos](https://github.com/jay-withers/github-repos)'
+`terraform/terraform.tfvars` and applied — that Terraform root module is now
+the single source of truth for these settings across every jay-withers repo,
+this template included.
 
 ## Structure
 
@@ -142,8 +108,6 @@ Confirm the exact context names for your repo's workflows with `gh pr checks`.
 .pre-commit-config.yaml
 commitlint.config.js   # commitlint (Conventional Commits) config
 renovate.json          # automated dependency updates
-scripts/
-  protect-branch.sh    # one-time GitHub settings (auto-merge, branch protection ruleset)
 CLAUDE.md              # guidance for Claude Code
 LICENSE
 Makefile
